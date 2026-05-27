@@ -1,6 +1,10 @@
 import customtkinter as ctk
 
-# Configure theme
+from tkinter import filedialog
+
+from core.scanner.file_scanner import scan_folder
+
+
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
@@ -11,37 +15,71 @@ class SafeRenameApp(ctk.CTk):
         super().__init__()
 
         self.title("SafeRename")
-        self.geometry("800x500")
+        self.geometry("900x600")
 
-        # Title Label
+        # Title
         title = ctk.CTkLabel(
             self,
             text="SafeRename 🚀",
-            font=("Arial", 28, "bold")
+            font=("Arial", 30, "bold")
         )
 
-        title.pack(pady=40)
+        title.pack(pady=20)
 
-        # Subtitle
-        subtitle = ctk.CTkLabel(
+        # Scan Button
+        scan_button = ctk.CTkButton(
             self,
-            text="Offline Unicode Filename Sanitizer",
-            font=("Arial", 16)
+            text="Select Folder & Scan",
+            command=self.select_folder
         )
 
-        subtitle.pack(pady=10)
+        scan_button.pack(pady=20)
 
-        # Button
-        button = ctk.CTkButton(
+        # Results Box
+        self.results_box = ctk.CTkTextbox(
             self,
-            text="Hello World",
-            command=self.hello_world
+            width=800,
+            height=400
         )
 
-        button.pack(pady=30)
+        self.results_box.pack(pady=20)
 
-    def hello_world(self):
-        print("SafeRename is running successfully!")
+    def select_folder(self):
+
+        folder_selected = filedialog.askdirectory()
+
+        if not folder_selected:
+            return
+
+        self.results_box.delete("1.0", "end")
+
+        self.results_box.insert(
+            "end",
+            f"Scanning:\n{folder_selected}\n\n"
+        )
+
+        results = scan_folder(folder_selected)
+
+        if not results:
+
+            self.results_box.insert(
+                "end",
+                "✅ No emoji filenames found."
+            )
+
+            return
+
+        self.results_box.insert(
+            "end",
+            f"⚠ Found {len(results)} problematic files:\n\n"
+        )
+
+        for item in results:
+
+            self.results_box.insert(
+                "end",
+                f"{item['name']}\n"
+            )
 
 
 if __name__ == "__main__":
