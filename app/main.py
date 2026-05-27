@@ -75,12 +75,20 @@ class SafeRenameApp(ctk.CTk):
         )
 
         for item in results:
+            preview_text = (
+             f"ORIGINAL:\n"
+             f"{item['original']}\n\n"
+             f"CLEANED:\n"
+             f"{item['cleaned']}\n"
+             f"{'-'*50}\n"
+            )
 
             self.results_box.insert(
                 "end",
-                f"{item['name']}\n"
+                preview_text
             )
 
+            
 
 if __name__ == "__main__":
     app = SafeRenameApp()
