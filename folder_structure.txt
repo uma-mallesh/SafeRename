@@ -1,0 +1,38 @@
+SafeRename/
+│
+├── app/
+│   ├── core/
+│   │   ├── scanner/
+│   │   ├── sanitizer/
+│   │   ├── compatibility/
+│   │   ├── archive/
+│   │   ├── rollback/
+│   │   └── utils/
+│   │
+│   ├── gui/
+│   │   ├── screens/
+│   │   ├── components/
+│   │   └── themes/
+│   │
+│   ├── models/
+│   │
+│   ├── services/
+│   │
+│   └── main.py
+│
+├── tests/
+│
+├── docs/
+│
+├── assets/
+│   ├── icons/
+│   └── logos/
+│
+├── logs/
+│
+├── temp/
+│
+├── requirements.txt
+├── README.md
+├── .gitignore
+└── LICENSE
