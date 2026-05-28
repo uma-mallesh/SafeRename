@@ -16,8 +16,8 @@ from core.rules.whitespace_rule import (
     WhitespaceRule
 )
 
-from core.rules.lowercase_rule import (
-    LowercaseRule
+from core.plugin_system.plugin_loader import (
+    load_plugins
 )
 
 
@@ -27,10 +27,27 @@ DEFAULT_RULES = [
 
     InvalidCharacterRule(),
 
-    WhitespaceRule(),
-
-    LowercaseRule()
+    WhitespaceRule()
 ]
+
+
+# -----------------------------------------
+# LOAD PLUGINS
+# -----------------------------------------
+
+registry = load_plugins()
+
+for plugin in registry.get_plugins():
+
+    try:
+
+        DEFAULT_RULES.append(
+            plugin.get_rule()
+        )
+
+    except Exception:
+
+        pass
 
 
 pipeline = RulePipeline(DEFAULT_RULES)
