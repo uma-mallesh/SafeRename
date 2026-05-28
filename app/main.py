@@ -26,6 +26,14 @@ from core.virtual_filesystem.simulation_engine import (
 )
 
 # =========================================================
+# DEPENDENCY GRAPH / EXECUTION SCHEDULER
+# =========================================================
+
+from core.dependency_graph.execution_scheduler import (
+    ExecutionScheduler
+)
+
+# =========================================================
 # COLLISION HANDLER
 # =========================================================
 
@@ -124,9 +132,9 @@ class SafeRenameApp(ctk.CTk):
 
         self.title("SafeRename")
 
-        self.geometry("1250x920")
+        self.geometry("1280x950")
 
-        self.minsize(1100, 760)
+        self.minsize(1150, 780)
 
         # =================================================
         # CORE STATE
@@ -146,6 +154,10 @@ class SafeRenameApp(ctk.CTk):
             SimulationEngine()
         )
 
+        self.execution_scheduler = (
+            ExecutionScheduler()
+        )
+
         # =================================================
         # HEADER
         # =================================================
@@ -153,7 +165,7 @@ class SafeRenameApp(ctk.CTk):
         self.title_label = ctk.CTkLabel(
             self,
             text="SafeRename 🚀",
-            font=("Arial", 38, "bold")
+            font=("Arial", 40, "bold")
         )
 
         self.title_label.pack(
@@ -163,8 +175,8 @@ class SafeRenameApp(ctk.CTk):
         self.subtitle_label = ctk.CTkLabel(
             self,
             text=(
-                "Predictive Atomic Filesystem "
-                "Orchestration Platform"
+                "Predictive Filesystem "
+                "Transaction Orchestrator"
             ),
             font=("Arial", 16)
         )
@@ -297,7 +309,7 @@ class SafeRenameApp(ctk.CTk):
 
         self.progress_bar = ctk.CTkProgressBar(
             self.status_frame,
-            width=900,
+            width=950,
             height=18
         )
 
@@ -327,8 +339,8 @@ class SafeRenameApp(ctk.CTk):
 
         self.results_box = ctk.CTkTextbox(
             self,
-            width=1150,
-            height=640,
+            width=1180,
+            height=680,
             font=("Consolas", 13)
         )
 
@@ -582,7 +594,7 @@ class SafeRenameApp(ctk.CTk):
             }
 
         # =================================================
-        # EXECUTION PLAN
+        # EXECUTION PLAN PREVIEW
         # =================================================
 
         plan = simulation["plan"]
@@ -620,7 +632,7 @@ class SafeRenameApp(ctk.CTk):
         )
 
         # =================================================
-        # STAGE TRANSACTION OPERATIONS
+        # STAGE OPERATIONS
         # =================================================
 
         for item in self.results:
@@ -642,7 +654,7 @@ class SafeRenameApp(ctk.CTk):
                 cleaned_name = item["cleaned"]
 
                 # -----------------------------------------
-                # COLLISION RESOLUTION
+                # COLLISION HANDLER
                 # -----------------------------------------
 
                 safe_name = resolve_collision(
@@ -700,7 +712,7 @@ class SafeRenameApp(ctk.CTk):
                 })
 
                 # -----------------------------------------
-                # STAGE TRANSACTION
+                # STAGE TRANSACTION OPERATION
                 # -----------------------------------------
 
                 transaction.add_operation(
@@ -718,7 +730,7 @@ class SafeRenameApp(ctk.CTk):
                 })
 
                 # -----------------------------------------
-                # UPDATE STATE
+                # UPDATE PROGRESS
                 # -----------------------------------------
 
                 self.operation_state.increment_completed()
@@ -749,6 +761,59 @@ class SafeRenameApp(ctk.CTk):
                 )
 
         # =================================================
+        # DEPENDENCY GRAPH ANALYSIS
+        # =================================================
+
+        schedule = (
+
+            self.execution_scheduler
+            .build_execution_plan(
+                transaction
+            )
+        )
+
+        self.results_box.insert(
+
+            "end",
+
+            (
+                "\n==================================================\n"
+                "DEPENDENCY GRAPH ANALYSIS\n"
+                "==================================================\n\n"
+            )
+        )
+
+        self.results_box.insert(
+
+            "end",
+
+            (
+                f"Cyclic Dependencies: "
+                f"{schedule['has_cycle']}\n\n"
+            )
+        )
+
+        self.results_box.insert(
+
+            "end",
+
+            "Execution Order:\n\n"
+        )
+
+        for node in schedule["execution_order"]:
+
+            self.results_box.insert(
+
+                "end",
+
+                (
+                    f"{Path(node.source).name}\n"
+                    f"→ "
+                    f"{Path(node.target).name}\n\n"
+                )
+            )
+
+        # =================================================
         # COMMIT TRANSACTION
         # =================================================
 
@@ -775,7 +840,9 @@ class SafeRenameApp(ctk.CTk):
 
             "rollback_log": rollback_log,
 
-            "transaction": transaction
+            "transaction": transaction,
+
+            "schedule": schedule
         }
 
     # =====================================================
