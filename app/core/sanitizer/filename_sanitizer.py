@@ -1,6 +1,15 @@
 import re
 import emoji
+
 from pathlib import Path
+
+from core.intelligence.extension_rules import (
+    get_file_category
+)
+
+from core.intelligence.media_patterns import (
+    preserve_media_patterns
+)
 
 
 INVALID_CHARS = r'[<>:"/\\|?*]'
@@ -8,7 +17,19 @@ INVALID_CHARS = r'[<>:"/\\|?*]'
 
 def remove_emojis(text):
 
-    return emoji.replace_emoji(text, replace='')
+    return emoji.replace_emoji(
+        text,
+        replace=''
+    )
+
+
+def normalize_spaces(text):
+
+    text = text.replace(" ", "_")
+
+    text = re.sub(r'_+', '_', text)
+
+    return text.strip('_')
 
 
 def sanitize_filename(filename):
@@ -16,25 +37,61 @@ def sanitize_filename(filename):
     path = Path(filename)
 
     stem = path.stem
+
     extension = path.suffix
 
-    # Remove emojis
+    category = get_file_category(extension)
+
+    preserved_patterns = []
+
+    # ----------------------------------------
+    # MEDIA-AWARE PROCESSING
+    # ----------------------------------------
+
+    if category == "media":
+
+        preserved_patterns = preserve_media_patterns(
+            stem
+        )
+
+    # ----------------------------------------
+    # REMOVE EMOJIS
+    # ----------------------------------------
+
     cleaned = remove_emojis(stem)
 
-    # Remove invalid filesystem chars
-    cleaned = re.sub(INVALID_CHARS, '', cleaned)
+    # ----------------------------------------
+    # REMOVE INVALID CHARS
+    # ----------------------------------------
 
-    # Replace spaces with underscores
-    cleaned = cleaned.replace(" ", "_")
+    cleaned = re.sub(
+        INVALID_CHARS,
+        '',
+        cleaned
+    )
 
-    # Remove repeated underscores
-    cleaned = re.sub(r'_+', '_', cleaned)
+    # ----------------------------------------
+    # NORMALIZE SPACES
+    # ----------------------------------------
 
-    # Trim underscores
-    cleaned = cleaned.strip('_')
+    cleaned = normalize_spaces(cleaned)
 
-    # Fallback name
+    # ----------------------------------------
+    # RESTORE PRESERVED PATTERNS
+    # ----------------------------------------
+
+    for pattern in preserved_patterns:
+
+        if pattern not in cleaned:
+
+            cleaned += f"_{pattern}"
+
+    # ----------------------------------------
+    # FALLBACK
+    # ----------------------------------------
+
     if not cleaned:
+
         cleaned = "renamed_file"
 
     return f"{cleaned}{extension}"
