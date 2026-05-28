@@ -34,6 +34,14 @@ from core.dependency_graph.execution_scheduler import (
 )
 
 # =========================================================
+# CYCLE RESOLUTION / DEADLOCK ENGINE
+# =========================================================
+
+from core.cycle_resolution.deadlock_resolver import (
+    DeadlockResolver
+)
+
+# =========================================================
 # COLLISION HANDLER
 # =========================================================
 
@@ -132,19 +140,23 @@ class SafeRenameApp(ctk.CTk):
 
         self.title("SafeRename")
 
-        self.geometry("1280x950")
+        self.geometry("1320x980")
 
-        self.minsize(1150, 780)
+        self.minsize(1180, 820)
 
         # =================================================
-        # CORE STATE
+        # CORE SYSTEMS
         # =================================================
 
         self.results = []
 
-        self.transaction_queue = TransactionQueue()
+        self.transaction_queue = (
+            TransactionQueue()
+        )
 
-        self.operation_state = OperationState()
+        self.operation_state = (
+            OperationState()
+        )
 
         self.transaction_manager = (
             TransactionManager()
@@ -158,13 +170,20 @@ class SafeRenameApp(ctk.CTk):
             ExecutionScheduler()
         )
 
+        self.deadlock_resolver = (
+            DeadlockResolver()
+        )
+
         # =================================================
         # HEADER
         # =================================================
 
         self.title_label = ctk.CTkLabel(
+
             self,
+
             text="SafeRename 🚀",
+
             font=("Arial", 40, "bold")
         )
 
@@ -173,11 +192,14 @@ class SafeRenameApp(ctk.CTk):
         )
 
         self.subtitle_label = ctk.CTkLabel(
+
             self,
+
             text=(
                 "Predictive Filesystem "
                 "Transaction Orchestrator"
             ),
+
             font=("Arial", 16)
         )
 
@@ -200,10 +222,15 @@ class SafeRenameApp(ctk.CTk):
         # =================================================
 
         self.scan_button = ctk.CTkButton(
+
             self.button_frame,
+
             text="Select Folder & Scan",
+
             command=self.select_folder,
+
             width=220,
+
             height=44
         )
 
@@ -219,12 +246,19 @@ class SafeRenameApp(ctk.CTk):
         # =================================================
 
         self.rename_button = ctk.CTkButton(
+
             self.button_frame,
+
             text="Execute Transaction",
+
             command=self.rename_files,
+
             fg_color="darkgreen",
+
             hover_color="green",
+
             width=220,
+
             height=44
         )
 
@@ -240,12 +274,19 @@ class SafeRenameApp(ctk.CTk):
         # =================================================
 
         self.undo_button = ctk.CTkButton(
+
             self.button_frame,
+
             text="Undo Transaction",
+
             command=self.undo_last_rename,
+
             fg_color="darkred",
+
             hover_color="red",
+
             width=220,
+
             height=44
         )
 
@@ -261,12 +302,19 @@ class SafeRenameApp(ctk.CTk):
         # =================================================
 
         self.cancel_button = ctk.CTkButton(
+
             self.button_frame,
+
             text="Cancel Operation",
+
             command=self.cancel_operation,
+
             fg_color="orange",
+
             hover_color="darkorange",
+
             width=220,
+
             height=44
         )
 
@@ -294,8 +342,11 @@ class SafeRenameApp(ctk.CTk):
         # =================================================
 
         self.status_label = ctk.CTkLabel(
+
             self.status_frame,
+
             text="Status: Idle",
+
             font=("Arial", 14)
         )
 
@@ -308,8 +359,11 @@ class SafeRenameApp(ctk.CTk):
         # =================================================
 
         self.progress_bar = ctk.CTkProgressBar(
+
             self.status_frame,
-            width=950,
+
+            width=980,
+
             height=18
         )
 
@@ -324,8 +378,11 @@ class SafeRenameApp(ctk.CTk):
         # =================================================
 
         self.metrics_label = ctk.CTkLabel(
+
             self.status_frame,
+
             text="Processed: 0 / 0",
+
             font=("Arial", 13)
         )
 
@@ -338,9 +395,13 @@ class SafeRenameApp(ctk.CTk):
         # =================================================
 
         self.results_box = ctk.CTkTextbox(
+
             self,
-            width=1180,
-            height=680,
+
+            width=1220,
+
+            height=720,
+
             font=("Consolas", 13)
         )
 
@@ -363,12 +424,16 @@ class SafeRenameApp(ctk.CTk):
 
     def check_recovery_state(self):
 
-        interrupted = detect_interrupted_operations()
+        interrupted = (
+            detect_interrupted_operations()
+        )
 
         if interrupted:
 
             self.results_box.insert(
+
                 "end",
+
                 (
                     "⚠ Interrupted operations detected.\n"
                     f"{len(interrupted)} "
@@ -382,7 +447,9 @@ class SafeRenameApp(ctk.CTk):
 
     def select_folder(self):
 
-        folder_selected = filedialog.askdirectory()
+        folder_selected = (
+            filedialog.askdirectory()
+        )
 
         if not folder_selected:
             return
@@ -399,7 +466,9 @@ class SafeRenameApp(ctk.CTk):
         )
 
         self.results_box.insert(
+
             "end",
+
             (
                 "==================================================\n"
                 "SCAN SESSION STARTED\n"
@@ -408,7 +477,9 @@ class SafeRenameApp(ctk.CTk):
         )
 
         self.results_box.insert(
+
             "end",
+
             (
                 f"Scanning Folder:\n"
                 f"{folder_selected}\n\n"
@@ -473,14 +544,18 @@ class SafeRenameApp(ctk.CTk):
         if not self.results:
 
             self.results_box.insert(
+
                 "end",
+
                 "✅ No problematic filenames found.\n"
             )
 
             return
 
         self.results_box.insert(
+
             "end",
+
             (
                 f"⚠ Found "
                 f"{len(self.results)} "
@@ -515,7 +590,9 @@ class SafeRenameApp(ctk.CTk):
         if not self.results:
 
             self.results_box.insert(
+
                 "end",
+
                 "\n❌ No scan results available.\n"
             )
 
@@ -540,8 +617,8 @@ class SafeRenameApp(ctk.CTk):
 
         self.operation_state.reset()
 
-        self.operation_state.total_operations = len(
-            self.results
+        self.operation_state.total_operations = (
+            len(self.results)
         )
 
         self.transaction_queue.clear()
@@ -553,6 +630,7 @@ class SafeRenameApp(ctk.CTk):
         # =================================================
 
         simulation = (
+
             self.simulation_engine.run(
                 self.results
             )
@@ -627,6 +705,7 @@ class SafeRenameApp(ctk.CTk):
         # =================================================
 
         transaction = (
+
             self.transaction_manager
             .create_transaction()
         )
@@ -638,7 +717,6 @@ class SafeRenameApp(ctk.CTk):
         for item in self.results:
 
             if self.operation_state.cancel_requested:
-
                 break
 
             try:
@@ -680,7 +758,6 @@ class SafeRenameApp(ctk.CTk):
                 )
 
                 if issues:
-
                     continue
 
                 # -----------------------------------------
@@ -736,6 +813,7 @@ class SafeRenameApp(ctk.CTk):
                 self.operation_state.increment_completed()
 
                 progress = (
+
                     self.operation_state
                     .progress_percentage()
                 )
@@ -812,6 +890,47 @@ class SafeRenameApp(ctk.CTk):
                     f"{Path(node.target).name}\n\n"
                 )
             )
+
+        # =================================================
+        # DEADLOCK RESOLUTION
+        # =================================================
+
+        rewritten_plan = (
+
+            self.deadlock_resolver.resolve(
+                schedule
+            )
+        )
+
+        # =================================================
+        # DISPLAY REWRITTEN GRAPH
+        # =================================================
+
+        if rewritten_plan:
+
+            self.results_box.insert(
+
+                "end",
+
+                (
+                    "\n==================================================\n"
+                    "CYCLE RESOLUTION PLAN\n"
+                    "==================================================\n\n"
+                )
+            )
+
+            for operation in rewritten_plan.operations:
+
+                self.results_box.insert(
+
+                    "end",
+
+                    (
+                        f"{Path(operation['source']).name}\n"
+                        f"→ "
+                        f"{Path(operation['target']).name}\n\n"
+                    )
+                )
 
         # =================================================
         # COMMIT TRANSACTION
