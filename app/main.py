@@ -15,6 +15,13 @@ from core.rename_engine.rollback_manager import (
 )
 
 from core.rename_engine.undo_engine import undo_renames
+from core.rename_engine.transaction_validator import (
+    validate_transaction
+)
+
+from core.rename_engine.transaction_queue import (
+    TransactionQueue
+)
 
 
 # Theme Configuration
@@ -98,6 +105,7 @@ class SafeRenameApp(ctk.CTk):
         )
 
         self.results_box.pack(pady=20)
+        self.transaction_queue = TransactionQueue()
 
     # -----------------------------------
     # SELECT + SCAN
@@ -187,8 +195,36 @@ class SafeRenameApp(ctk.CTk):
                     directory,
                     cleaned_name
                 )
+                # Validate transaction
+                issues = validate_transaction(
+                    original_path,
+                    safe_name
+                )
 
-                # Perform rename
+                if issues:
+
+                    self.results_box.insert(
+                        "end",
+                        f"❌ Validation Failed:\n"
+                        f"{item['original']}\n"
+                    )
+
+                    for issue in issues:
+
+                        self.results_box.insert(
+                            "end",
+                            f"   - {issue}\n"
+                        )
+
+                    self.results_box.insert(
+                        "end",
+                        "\n"
+                    )
+
+                    continue
+                
+
+               
                 result = safe_rename(
                     original_path,
                     safe_name
@@ -219,6 +255,15 @@ class SafeRenameApp(ctk.CTk):
             "end",
             "\n✅ Rename operation completed.\n"
             "Rollback history saved.\n"
+        )
+        self.transaction_queue.add({
+            "original": original_path,
+            "safe_name": safe_name
+        })
+        self.results_box.insert(
+            "end",
+            f"\nTransaction Queue Processed:\n"
+            f"{self.transaction_queue.count()} operations\n"
         )
 
     # -----------------------------------
