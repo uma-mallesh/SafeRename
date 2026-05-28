@@ -1,0 +1,13 @@
+class TransactionState:
+
+    PENDING = "PENDING"
+
+    STAGED = "STAGED"
+
+    EXECUTING = "EXECUTING"
+
+    COMMITTED = "COMMITTED"
+
+    ROLLED_BACK = "ROLLED_BACK"
+
+    FAILED = "FAILED"
