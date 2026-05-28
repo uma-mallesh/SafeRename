@@ -29,3 +29,11 @@ def load_rollback():
     with open(ROLLBACK_FILE, "r", encoding="utf-8") as file:
 
         return json.load(file)
+
+def clear_rollback():
+
+    rollback_path = Path(ROLLBACK_FILE)
+
+    if rollback_path.exists():
+
+        rollback_path.unlink()
