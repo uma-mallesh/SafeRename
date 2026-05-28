@@ -42,6 +42,18 @@ from core.cycle_resolution.deadlock_resolver import (
 )
 
 # =========================================================
+# CONCURRENCY ENGINE
+# =========================================================
+
+from core.concurrency.concurrent_executor import (
+    ConcurrentExecutor
+)
+
+from core.concurrency.scheduler_optimizer import (
+    SchedulerOptimizer
+)
+
+# =========================================================
 # COLLISION HANDLER
 # =========================================================
 
@@ -140,9 +152,9 @@ class SafeRenameApp(ctk.CTk):
 
         self.title("SafeRename")
 
-        self.geometry("1320x980")
+        self.geometry("1360x1000")
 
-        self.minsize(1180, 820)
+        self.minsize(1200, 850)
 
         # =================================================
         # CORE SYSTEMS
@@ -174,6 +186,14 @@ class SafeRenameApp(ctk.CTk):
             DeadlockResolver()
         )
 
+        self.concurrent_executor = (
+            ConcurrentExecutor()
+        )
+
+        self.scheduler_optimizer = (
+            SchedulerOptimizer()
+        )
+
         # =================================================
         # HEADER
         # =================================================
@@ -184,7 +204,7 @@ class SafeRenameApp(ctk.CTk):
 
             text="SafeRename 🚀",
 
-            font=("Arial", 40, "bold")
+            font=("Arial", 42, "bold")
         )
 
         self.title_label.pack(
@@ -196,8 +216,8 @@ class SafeRenameApp(ctk.CTk):
             self,
 
             text=(
-                "Predictive Filesystem "
-                "Transaction Orchestrator"
+                "High-Performance Predictive "
+                "Filesystem Transaction Orchestrator"
             ),
 
             font=("Arial", 16)
@@ -362,7 +382,7 @@ class SafeRenameApp(ctk.CTk):
 
             self.status_frame,
 
-            width=980,
+            width=1050,
 
             height=18
         )
@@ -398,9 +418,9 @@ class SafeRenameApp(ctk.CTk):
 
             self,
 
-            width=1220,
+            width=1260,
 
-            height=720,
+            height=760,
 
             font=("Consolas", 13)
         )
@@ -933,13 +953,84 @@ class SafeRenameApp(ctk.CTk):
                 )
 
         # =================================================
-        # COMMIT TRANSACTION
+        # BUILD PARALLEL EXECUTION PLAN
         # =================================================
 
-        success = (
+        parallel_operations = []
 
-            self.transaction_manager.commit(
-                transaction
+        if rewritten_plan:
+
+            parallel_operations = (
+                rewritten_plan.operations
+            )
+
+        else:
+
+            for node in schedule["execution_order"]:
+
+                parallel_operations.append({
+
+                    "source": node.source,
+
+                    "target": node.target
+                })
+
+        # =================================================
+        # OPTIMIZE EXECUTION ORDER
+        # =================================================
+
+        optimized_operations = (
+
+            self.scheduler_optimizer.optimize(
+                parallel_operations
+            )
+        )
+
+        # =================================================
+        # EXECUTE CONCURRENTLY
+        # =================================================
+
+        execution_result = (
+
+            self.concurrent_executor.execute(
+                optimized_operations
+            )
+        )
+
+        success = True
+
+        # =================================================
+        # EXECUTION METRICS
+        # =================================================
+
+        self.results_box.insert(
+
+            "end",
+
+            (
+                "\n==================================================\n"
+                "PARALLEL EXECUTION METRICS\n"
+                "==================================================\n\n"
+            )
+        )
+
+        self.results_box.insert(
+
+            "end",
+
+            (
+                f"Execution Time: "
+                f"{execution_result['duration']} sec\n\n"
+            )
+        )
+
+        self.results_box.insert(
+
+            "end",
+
+            (
+                f"Parallel Operations: "
+                f"{len(optimized_operations)}\n\n"
             )
         )
 
@@ -961,7 +1052,9 @@ class SafeRenameApp(ctk.CTk):
 
             "transaction": transaction,
 
-            "schedule": schedule
+            "schedule": schedule,
+
+            "execution_result": execution_result
         }
 
     # =====================================================
@@ -1015,6 +1108,8 @@ class SafeRenameApp(ctk.CTk):
         rollback_log = result["rollback_log"]
 
         transaction = result["transaction"]
+
+        execution_result = result["execution_result"]
 
         # =================================================
         # CANCELLATION
@@ -1132,8 +1227,18 @@ class SafeRenameApp(ctk.CTk):
             "end",
 
             (
-                "✅ Predictive atomic "
-                "transaction completed successfully.\n"
+                f"Execution Duration:\n"
+                f"{execution_result['duration']} sec\n\n"
+            )
+        )
+
+        self.results_box.insert(
+
+            "end",
+
+            (
+                "✅ Parallel predictive transaction "
+                "completed successfully.\n"
             )
         )
 
