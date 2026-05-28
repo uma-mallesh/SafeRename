@@ -14,7 +14,10 @@ from core.scanner.file_scanner import scan_folder
 # =========================================================
 
 from core.rename_engine.rename_manager import safe_rename
-from core.rename_engine.collision_handler import resolve_collision
+
+from core.rename_engine.collision_handler import (
+    resolve_collision
+)
 
 # =========================================================
 # ROLLBACK
@@ -30,7 +33,9 @@ from core.rename_engine.rollback_manager import (
 # UNDO ENGINE
 # =========================================================
 
-from core.rename_engine.undo_engine import undo_renames
+from core.rename_engine.undo_engine import (
+    undo_renames
+)
 
 # =========================================================
 # VALIDATION
@@ -49,24 +54,43 @@ from core.rename_engine.transaction_queue import (
 )
 
 # =========================================================
-# BACKGROUND WORKERS
+# WORKERS
 # =========================================================
 
 from core.workers.scan_worker import ScanWorker
+
 from core.workers.rename_worker import RenameWorker
 
 # =========================================================
 # OPERATION STATE
 # =========================================================
 
-from core.state.operation_state import OperationState
-
+from core.state.operation_state import (
+    OperationState
+)
 
 # =========================================================
-# THEME CONFIGURATION
+# PERSISTENCE / RECOVERY
+# =========================================================
+
+from core.persistence.operation_journal import (
+    write_journal
+)
+
+from core.persistence.recovery_manager import (
+    detect_interrupted_operations
+)
+
+from core.persistence.state_snapshot import (
+    save_snapshot
+)
+
+# =========================================================
+# THEME
 # =========================================================
 
 ctk.set_appearance_mode("dark")
+
 ctk.set_default_color_theme("blue")
 
 
@@ -75,6 +99,10 @@ ctk.set_default_color_theme("blue")
 # =========================================================
 
 class SafeRenameApp(ctk.CTk):
+
+    # =====================================================
+    # INITIALIZATION
+    # =====================================================
 
     def __init__(self):
 
@@ -85,7 +113,10 @@ class SafeRenameApp(ctk.CTk):
         # -------------------------------------------------
 
         self.title("SafeRename")
-        self.geometry("1050x820")
+
+        self.geometry("1150x860")
+
+        self.minsize(1000, 700)
 
         # -------------------------------------------------
         # APPLICATION STATE
@@ -104,18 +135,25 @@ class SafeRenameApp(ctk.CTk):
         self.title_label = ctk.CTkLabel(
             self,
             text="SafeRename 🚀",
-            font=("Arial", 34, "bold")
+            font=("Arial", 36, "bold")
         )
 
-        self.title_label.pack(pady=(20, 5))
+        self.title_label.pack(
+            pady=(20, 5)
+        )
 
         self.subtitle_label = ctk.CTkLabel(
             self,
-            text="Offline Unicode Filename Sanitizer",
+            text=(
+                "Offline Filesystem Intelligence "
+                "& Recovery Platform"
+            ),
             font=("Arial", 16)
         )
 
-        self.subtitle_label.pack(pady=(0, 20))
+        self.subtitle_label.pack(
+            pady=(0, 20)
+        )
 
         # -------------------------------------------------
         # BUTTON FRAME
@@ -123,7 +161,9 @@ class SafeRenameApp(ctk.CTk):
 
         self.button_frame = ctk.CTkFrame(self)
 
-        self.button_frame.pack(pady=10)
+        self.button_frame.pack(
+            pady=10
+        )
 
         # -------------------------------------------------
         # SCAN BUTTON
@@ -134,7 +174,7 @@ class SafeRenameApp(ctk.CTk):
             text="Select Folder & Scan",
             command=self.select_folder,
             width=200,
-            height=40
+            height=42
         )
 
         self.scan_button.grid(
@@ -155,7 +195,7 @@ class SafeRenameApp(ctk.CTk):
             fg_color="darkgreen",
             hover_color="green",
             width=200,
-            height=40
+            height=42
         )
 
         self.rename_button.grid(
@@ -176,7 +216,7 @@ class SafeRenameApp(ctk.CTk):
             fg_color="darkred",
             hover_color="red",
             width=200,
-            height=40
+            height=42
         )
 
         self.undo_button.grid(
@@ -197,7 +237,7 @@ class SafeRenameApp(ctk.CTk):
             fg_color="orange",
             hover_color="darkorange",
             width=200,
-            height=40
+            height=42
         )
 
         self.cancel_button.grid(
@@ -208,27 +248,44 @@ class SafeRenameApp(ctk.CTk):
         )
 
         # -------------------------------------------------
+        # STATUS FRAME
+        # -------------------------------------------------
+
+        self.status_frame = ctk.CTkFrame(self)
+
+        self.status_frame.pack(
+            fill="x",
+            padx=20,
+            pady=10
+        )
+
+        # -------------------------------------------------
         # STATUS LABEL
         # -------------------------------------------------
 
         self.status_label = ctk.CTkLabel(
-            self,
+            self.status_frame,
             text="Status: Idle",
             font=("Arial", 14)
         )
 
-        self.status_label.pack(pady=5)
+        self.status_label.pack(
+            pady=10
+        )
 
         # -------------------------------------------------
         # PROGRESS BAR
         # -------------------------------------------------
 
         self.progress_bar = ctk.CTkProgressBar(
-            self,
-            width=750
+            self.status_frame,
+            width=850,
+            height=18
         )
 
-        self.progress_bar.pack(pady=10)
+        self.progress_bar.pack(
+            pady=10
+        )
 
         self.progress_bar.set(0)
 
@@ -237,12 +294,14 @@ class SafeRenameApp(ctk.CTk):
         # -------------------------------------------------
 
         self.metrics_label = ctk.CTkLabel(
-            self,
+            self.status_frame,
             text="Processed: 0 / 0",
             font=("Arial", 13)
         )
 
-        self.metrics_label.pack(pady=5)
+        self.metrics_label.pack(
+            pady=(0, 10)
+        )
 
         # -------------------------------------------------
         # RESULTS BOX
@@ -250,18 +309,45 @@ class SafeRenameApp(ctk.CTk):
 
         self.results_box = ctk.CTkTextbox(
             self,
-            width=950,
-            height=520,
-            font=("Consolas", 14)
+            width=1050,
+            height=560,
+            font=("Consolas", 13)
         )
 
         self.results_box.pack(
             pady=20,
-            padx=20
+            padx=20,
+            fill="both",
+            expand=True
         )
 
+        # -------------------------------------------------
+        # STARTUP RECOVERY CHECK
+        # -------------------------------------------------
+
+        self.check_recovery_state()
+
     # =====================================================
-    # SELECT FOLDER + SCAN
+    # RECOVERY CHECK
+    # =====================================================
+
+    def check_recovery_state(self):
+
+        interrupted = detect_interrupted_operations()
+
+        if interrupted:
+
+            self.results_box.insert(
+                "end",
+                (
+                    "⚠ Interrupted operations detected.\n"
+                    f"{len(interrupted)} "
+                    f"incomplete tasks found.\n\n"
+                )
+            )
+
+    # =====================================================
+    # SELECT FOLDER
     # =====================================================
 
     def select_folder(self):
@@ -281,6 +367,15 @@ class SafeRenameApp(ctk.CTk):
 
         self.results_box.insert(
             "end",
+            (
+                "==================================================\n"
+                "SCAN SESSION STARTED\n"
+                "==================================================\n\n"
+            )
+        )
+
+        self.results_box.insert(
+            "end",
             f"Scanning Folder:\n{folder_selected}\n\n"
         )
 
@@ -288,9 +383,20 @@ class SafeRenameApp(ctk.CTk):
             text="Status: Scanning..."
         )
 
-        # ---------------------------------------------
+        # -------------------------------------------------
+        # SAVE SNAPSHOT
+        # -------------------------------------------------
+
+        save_snapshot({
+
+            "last_selected_folder": folder_selected,
+
+            "status": "scanning"
+        })
+
+        # -------------------------------------------------
         # BACKGROUND SCAN TASK
-        # ---------------------------------------------
+        # -------------------------------------------------
 
         def scan_task():
 
@@ -337,17 +443,24 @@ class SafeRenameApp(ctk.CTk):
 
         self.results_box.insert(
             "end",
-            f"⚠ Found {len(self.results)} problematic files:\n\n"
+            (
+                f"⚠ Found "
+                f"{len(self.results)} "
+                f"problematic files:\n\n"
+            )
         )
 
         for item in self.results:
 
             preview_text = (
+
                 f"ORIGINAL:\n"
                 f"{item['original']}\n\n"
+
                 f"CLEANED:\n"
                 f"{item['cleaned']}\n"
-                f"{'-' * 60}\n"
+
+                f"{'-' * 70}\n"
             )
 
             self.results_box.insert(
@@ -387,9 +500,9 @@ class SafeRenameApp(ctk.CTk):
 
     def perform_rename_operations(self):
 
-        # ---------------------------------------------
+        # -------------------------------------------------
         # RESET OPERATION STATE
-        # ---------------------------------------------
+        # -------------------------------------------------
 
         self.operation_state.reset()
 
@@ -397,25 +510,26 @@ class SafeRenameApp(ctk.CTk):
             self.results
         )
 
-        # ---------------------------------------------
-        # CLEAR OLD QUEUE
-        # ---------------------------------------------
+        # -------------------------------------------------
+        # CLEAR QUEUE
+        # -------------------------------------------------
 
         self.transaction_queue.clear()
 
         rename_log = []
 
-        # ---------------------------------------------
+        # -------------------------------------------------
         # PROCESS FILES
-        # ---------------------------------------------
+        # -------------------------------------------------
 
         for item in self.results:
 
-            # -----------------------------------------
+            # ---------------------------------------------
             # CANCELLATION CHECK
-            # -----------------------------------------
+            # ---------------------------------------------
 
             if self.operation_state.cancel_requested:
+
                 break
 
             try:
@@ -428,18 +542,18 @@ class SafeRenameApp(ctk.CTk):
 
                 cleaned_name = item["cleaned"]
 
-                # -------------------------------------
-                # COLLISION HANDLING
-                # -------------------------------------
+                # -----------------------------------------
+                # COLLISION HANDLER
+                # -----------------------------------------
 
                 safe_name = resolve_collision(
                     directory,
                     cleaned_name
                 )
 
-                # -------------------------------------
+                # -----------------------------------------
                 # VALIDATION
-                # -------------------------------------
+                # -----------------------------------------
 
                 issues = validate_transaction(
                     original_path,
@@ -447,20 +561,40 @@ class SafeRenameApp(ctk.CTk):
                 )
 
                 if issues:
+
                     continue
 
-                # -------------------------------------
+                # -----------------------------------------
+                # JOURNAL ENTRY
+                # -----------------------------------------
+
+                journal_entry = {
+
+                    "original": original_path,
+
+                    "target": safe_name,
+
+                    "completed": False
+                }
+
+                write_journal(
+                    journal_entry
+                )
+
+                # -----------------------------------------
                 # QUEUE OPERATION
-                # -------------------------------------
+                # -----------------------------------------
 
                 self.transaction_queue.add({
+
                     "original": original_path,
+
                     "safe_name": safe_name
                 })
 
-                # -------------------------------------
+                # -----------------------------------------
                 # EXECUTE RENAME
-                # -------------------------------------
+                # -----------------------------------------
 
                 result = safe_rename(
                     original_path,
@@ -469,9 +603,19 @@ class SafeRenameApp(ctk.CTk):
 
                 rename_log.append(result)
 
-                # -------------------------------------
-                # UPDATE PROGRESS
-                # -------------------------------------
+                # -----------------------------------------
+                # MARK COMPLETE
+                # -----------------------------------------
+
+                journal_entry["completed"] = True
+
+                write_journal(
+                    journal_entry
+                )
+
+                # -----------------------------------------
+                # UPDATE STATE
+                # -----------------------------------------
 
                 self.operation_state.increment_completed()
 
@@ -482,15 +626,23 @@ class SafeRenameApp(ctk.CTk):
 
                 self.after(
                     0,
-                    lambda p=progress: self.update_progress(p)
+                    lambda p=progress:
+                    self.update_progress(p)
                 )
 
-            except Exception:
-                pass
+            except Exception as error:
 
-        # ---------------------------------------------
+                self.results_box.insert(
+                    "end",
+                    (
+                        "❌ ERROR:\n"
+                        f"{str(error)}\n\n"
+                    )
+                )
+
+        # -------------------------------------------------
         # SAVE ROLLBACK HISTORY
-        # ---------------------------------------------
+        # -------------------------------------------------
 
         save_rollback(rename_log)
 
@@ -502,13 +654,20 @@ class SafeRenameApp(ctk.CTk):
 
     def update_progress(self, progress):
 
-        self.progress_bar.set(progress / 100)
+        self.progress_bar.set(
+            progress / 100
+        )
 
         self.metrics_label.configure(
+
             text=(
+
                 f"Processed: "
+
                 f"{self.operation_state.completed_operations}"
+
                 f" / "
+
                 f"{self.operation_state.total_operations}"
             )
         )
@@ -521,7 +680,8 @@ class SafeRenameApp(ctk.CTk):
 
         self.after(
             0,
-            lambda: self.display_rename_results(rename_log)
+            lambda:
+            self.display_rename_results(rename_log)
         )
 
     # =====================================================
@@ -530,9 +690,9 @@ class SafeRenameApp(ctk.CTk):
 
     def display_rename_results(self, rename_log):
 
-        # ---------------------------------------------
-        # HANDLE CANCELLATION
-        # ---------------------------------------------
+        # -------------------------------------------------
+        # CANCELLATION HANDLING
+        # -------------------------------------------------
 
         if self.operation_state.cancel_requested:
 
@@ -547,9 +707,9 @@ class SafeRenameApp(ctk.CTk):
 
             return
 
-        # ---------------------------------------------
+        # -------------------------------------------------
         # STATUS UPDATE
-        # ---------------------------------------------
+        # -------------------------------------------------
 
         self.status_label.configure(
             text="Status: Rename Complete"
@@ -557,7 +717,11 @@ class SafeRenameApp(ctk.CTk):
 
         self.results_box.insert(
             "end",
-            "\n✅ Rename operation completed.\n\n"
+            (
+                "\n==================================================\n"
+                "RENAME OPERATION COMPLETED\n"
+                "==================================================\n\n"
+            )
         )
 
         if not rename_log:
@@ -569,32 +733,59 @@ class SafeRenameApp(ctk.CTk):
 
             return
 
-        # ---------------------------------------------
+        # -------------------------------------------------
         # DISPLAY RESULTS
-        # ---------------------------------------------
+        # -------------------------------------------------
 
         for item in rename_log:
 
-            old_name = Path(item["old"]).name
-            new_name = Path(item["new"]).name
+            old_name = Path(
+                item["old"]
+            ).name
+
+            new_name = Path(
+                item["new"]
+            ).name
 
             self.results_box.insert(
                 "end",
-                f"✅ Renamed:\n"
-                f"{old_name}\n"
-                f"→ {new_name}\n\n"
+                (
+                    f"✅ Renamed:\n"
+
+                    f"{old_name}\n"
+
+                    f"→ {new_name}\n\n"
+                )
             )
+
+        # -------------------------------------------------
+        # SUMMARY
+        # -------------------------------------------------
 
         self.results_box.insert(
             "end",
-            f"Processed:\n"
-            f"{len(rename_log)} operations\n\n"
+            (
+                f"\nProcessed:\n"
+                f"{len(rename_log)} operations\n\n"
+            )
         )
 
         self.results_box.insert(
             "end",
-            f"Transaction Queue:\n"
-            f"{self.transaction_queue.count()} operations\n"
+            (
+                "Transaction Queue:\n"
+                f"{self.transaction_queue.count()} "
+                f"operations\n\n"
+            )
+        )
+
+        self.results_box.insert(
+            "end",
+            (
+                "==================================================\n"
+                "SESSION COMPLETE\n"
+                "==================================================\n"
+            )
         )
 
     # =====================================================
@@ -623,9 +814,12 @@ class SafeRenameApp(ctk.CTk):
             "\n↩ Starting rollback...\n\n"
         )
 
-        results = undo_renames(rollback_log)
+        results = undo_renames(
+            rollback_log
+        )
 
         success_count = 0
+
         failed_count = 0
 
         for result in results:
@@ -636,8 +830,10 @@ class SafeRenameApp(ctk.CTk):
 
                 self.results_box.insert(
                     "end",
-                    f"✅ Restored:\n"
-                    f"{result['restored']}\n\n"
+                    (
+                        f"✅ Restored:\n"
+                        f"{result['restored']}\n\n"
+                    )
                 )
 
             else:
@@ -646,8 +842,10 @@ class SafeRenameApp(ctk.CTk):
 
                 self.results_box.insert(
                     "end",
-                    f"❌ Rollback Failed:\n"
-                    f"{result['reason']}\n\n"
+                    (
+                        "❌ Rollback Failed:\n"
+                        f"{result['reason']}\n\n"
+                    )
                 )
 
         clear_rollback()
@@ -658,9 +856,13 @@ class SafeRenameApp(ctk.CTk):
 
         self.results_box.insert(
             "end",
-            f"\n🎯 Rollback Complete\n"
-            f"Success: {success_count}\n"
-            f"Failed: {failed_count}\n"
+            (
+                "\n🎯 Rollback Complete\n"
+
+                f"Success: {success_count}\n"
+
+                f"Failed: {failed_count}\n"
+            )
         )
 
     # =====================================================
@@ -673,6 +875,14 @@ class SafeRenameApp(ctk.CTk):
 
         self.status_label.configure(
             text="Status: Cancellation Requested..."
+        )
+
+        self.results_box.insert(
+            "end",
+            (
+                "\n⚠ User requested "
+                "operation cancellation.\n"
+            )
         )
 
 
